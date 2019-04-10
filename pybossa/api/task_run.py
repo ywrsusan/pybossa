@@ -138,7 +138,10 @@ class TaskRunAPI(APIBase):
 
     def _after_save(self, original_data, instance):
         mark_if_complete(instance.task_id, instance.project_id)
-        update_gold_stats(instance.user_id, instance.task_id, original_data)
+        try:
+            update_gold_stats(instance.user_id, instance.task_id, original_data)
+        except Exception:
+            current_app.logger.exception('Error occurred while updating stats')
 
     def _add_timestamps(self, taskrun, task, guard):
         finish_time = datetime.utcnow().isoformat()

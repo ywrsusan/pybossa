@@ -1174,3 +1174,24 @@ class TestTaskrunAPI(TestAPI):
 
         assert result is None, result
         # assert result is not None, result
+
+    @with_context
+    @patch('pybossa.api.task_run.ContributionsGuard')
+    @patch('pybossa.api.task_run.update_gold_stats')
+    def test_post_taskrun_stat_error(self, update, guard):
+        update.side_effect = Exception
+        guard.return_value = mock_contributions_guard(True, "a while ago")
+        project = ProjectFactory.create(published=False)
+        task = TaskFactory.create(project=project, n_answers=1)
+        url = '/api/taskrun?api_key=%s' % project.owner.api_key
+
+        data = dict(
+            project_id=task.project_id,
+            task_id=task.id,
+            user_id=project.owner.id,
+            info='my task result')
+        datajson = json.dumps(data)
+
+        res = self.app.post(url, data=datajson)
+
+        assert res.status_code == 200
